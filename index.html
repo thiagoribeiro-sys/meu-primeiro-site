@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopee - SGE 1.0 (Sistema de Gestão de Escala)</title>
+    <style>
+        :root {
+            --shopee-orange: #FF5722;
+            --shopee-dark: #222222;
+            --shopee-gray: #F5F5F5;
+            --shopee-border: #E0E0E0;
+            --sidebar-width: 260px;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--shopee-gray);
+            color: var(--shopee-dark);
+            margin: 0; padding: 0;
+            display: flex; min-height: 100vh;
+        }
+        .sidebar {
+            width: var(--sidebar-width); background-color: #ffffff;
+            border-right: 1px solid var(--shopee-border);
+            display: flex; flex-direction: column; position: fixed;
+            height: 100vh; top: 0; left: 0; z-index: 100;
+        }
+        .main-content {
+            margin-left: var(--sidebar-width); flex: 1; padding: 30px;
+            background: #fafafa; min-height: 100vh; display: flex; flex-direction: column;
+        }
+        .header { padding: 20px; border-bottom: 3px solid var(--shopee-orange); background-color: #ffffff; }
+        .logo-placeholder { background-color: var(--shopee-orange); color: white; font-weight: bold; padding: 10px; border-radius: 4px; font-size: 24px; text-align: center; margin-bottom: 15px; }
+        .title h1 { margin: 0; font-size: 20px; text-align: center;}
+        .title p { margin: 5px 0 0 0; color: #666; font-size: 14px; text-align: center;}
+        .nav-tabs { display: flex; flex-direction: column; padding: 15px 0; flex: 1; }
+        .tab-btn { background: none; border: none; padding: 15px 20px; font-size: 14px; font-weight: bold; cursor: pointer; color: #555; text-align: left; border-left: 4px solid transparent; transition: all 0.2s; }
+        .tab-btn:hover { background-color: #f9f9f9; color: var(--shopee-orange); }
+        .tab-btn.active { color: var(--shopee-orange); background-color: #fff0ec; border-left-color: var(--shopee-orange); }
+        .container-box { background: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); flex: 1; width: 100%; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        textarea { width: 100%; height: 180px; padding: 12px; border: 2px solid var(--shopee-border); border-radius: 6px; resize: vertical; font-family: monospace; margin-bottom: 10px; font-size: 12px; }
+        textarea:focus { border-color: var(--shopee-orange); outline: none; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; background: #fdfdfd; padding: 20px; border-radius: 6px; border: 1px solid var(--shopee-border); margin-bottom: 15px; }
+        .filter-group { display: flex; flex-direction: column; }
+        .filter-group label { font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #555; }
+        .filter-group input, .filter-group select { padding: 10px; border: 1px solid var(--shopee-border); border-radius: 4px; font-size: 14px; background: white;}
+        button.btn-primary { background-color: var(--shopee-orange); color: white; border: none; padding: 12px 22px; font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; margin-top: 10px; margin-right: 5px; }
+        button.btn-primary:hover { background-color: #e04513; }
+        .insert-form-box { background: #fdfdfd; border: 1px dashed var(--shopee-orange); padding: 15px; border-radius: 6px; margin: 20px 0; }
+        .form-grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 10px; }
+        .form-grid-inputs input { width: 100%; padding: 8px; border: 1px solid var(--shopee-border); border-radius: 4px; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid var(--shopee-border); padding: 10px; text-align: left; font-size: 13px; }
+        th { background-color: #f5f5f5; font-weight: bold; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; text-transform: uppercase; display: inline-block; }
+        .badge-original { background-color: #e3f2fd; color: #0d47a1; }
+        .badge-suplente { background-color: #ffe0b2; color: #e65100; }
+        
+        .progress-container { width: 100%; background-color: #e0e0e0; border-radius: 10px; overflow: hidden; height: 14px; position: relative; margin-top: 4px; }
+        .progress-bar { background-color: #4CAF50; height: 100%; width: 0%; transition: width 0.3s ease; }
+        .progress-text { font-size: 11px; font-weight: bold; margin-top: 2px; display: block; color: #555; }
+        .status-tag { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .status-ainiciar { background-color: #eceff1; color: #455a64; }
+        .status-emandamento { background-color: #e8f5e9; color: #2e7d32; }
+        .status-finalizada { background-color: #ffebee; color: #c62828; }
+
+        footer { text-align: center; padding: 20px; color: #777; font-size: 13px; border-top: 1px solid var(--shopee-border); background: #fff; margin-top: 30px; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="header">
+        <div class="logo-placeholder">Shopee</div>
+        <div class="title"><h1>SGE 1.0</h1><p>Supervisor: Thiago Ribeiro</p></div>
+    </div>
+    <div class="nav-tabs">
+        <button class="tab-btn active" id="btn-tab-base" onclick="switchTab('tab-base')">1. Importar Base Mestre</button>
+        <button class="tab-btn" id="btn-tab-niveis" onclick="switchTab('tab-niveis')">2. Níveis</button>
+        <button class="tab-btn" id="btn-tab-folgas" onclick="switchTab('tab-folgas')">3. Suplentes</button>
+        <button class="tab-btn" id="btn-tab-dash" onclick="switchTab('tab-dash'); filtrarDash();">4. Dashboard</button>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="container-box">
+        
+        <div id="tab-base" class="tab-content active">
+            <h2>1. Importar Base</h2>
+            <p style="font-size: 13px; color: #666;">Copie a tabela completa do Excel (com cabeçalhos ou sem) e cole abaixo.</p>
+            <textarea id="rawBase" placeholder="Início_Exp	Fim_Exp	Email	Analista	Hub_Sort	Hub_Name	Janela	Início_Rt	Fim_Rt	Data_Inicio_Vigência	Data_Fim_Vigência" oninput="persistirTextoBase()"></textarea>
+            <button class="btn-primary" onclick="processarBase()">Mapear Base</button>
+            <button class="btn-primary" style="background-color: #555;" onclick="clearStorage()">Limpar Sistema (Reset Total)</button>
+            <div id="baseFeedback" style="margin-top: 15px; font-weight: bold; color: #E04513;"></div>
+        </div>
+
+        <div id="tab-niveis" class="tab-content">
+            <h2>2. Níveis de Analistas e Operações (Matriz de Complexidade)</h2>
+            <div class="grid-2">
+                <div><h3>Nível do Analista</h3><div id="listaAnalistasNiveis">Importe a base primeiro.</div></div>
+                <div><h3>Nível da Operação (HUB_SORT + Janela)</h3><div id="listaHubsNiveis">Importe a base primeiro.</div></div>
+            </div>
+            <button class="btn-primary" onclick="salvarNiveis()">Salvar Parâmetros de Nível</button>
+        </div>
+
+        <div id="tab-folgas" class="tab-content">
+            <h2>3. Entrada de Folgas e Matriz de Suplentes</h2>
+            <div class="grid-2" style="margin-bottom: 10px;">
+                <div>
+                    <label style="font-weight: bold; font-size: 13px; display:block; margin-bottom:5px;">Opção A: Gerar Nova Escala</label>
+                    <textarea id="rawFolgas" placeholder="Nome/Email	Data (DD/MM/AAAA)" oninput="persistirTextoFolgas()"></textarea>
+                    <button class="btn-primary" onclick="calcularSuplenciaLote()">Processar Escala Automática</button>
+                </div>
+                <div>
+                    <label style="font-weight: bold; font-size: 13px; display:block; margin-bottom:5px; color:#0d47a1;">Opção B: Importar Relatório Pronto</label>
+                    <textarea id="rawRelatorioImportado" style="border-color: #90caf9;" placeholder="Folgante	Data	Operacao	Ciclo	Hora_Inicio	Hora_Fim	Suplente..." oninput="persistirTextoImportado()"></textarea>
+                    <button class="btn-primary" style="background-color: #0d47a1;" onclick="importarRelatorioPronto()">Importar Relatório Cobertura</button>
+                </div>
+            </div>
+            
+            <button class="btn-primary" style="background-color: #4CAF50;" onclick="exportarRelatorioCSV()">Baixar Relatório (.CSV)</button>
+            <button class="btn-primary" style="background-color: #757575;" onclick="limparHistoricoFolgas()">Limpar Relatório Atual</button>
+
+            <div class="insert-form-box">
+                <h4 style="margin: 0 0 10px 0; color: var(--shopee-orange);">+ Inserir Linha Manual</h4>
+                <div class="form-grid-inputs">
+                    <input type="text" id="insFolgante" placeholder="Folgante (Nome ou Email)">
+                    <input type="text" id="insData" placeholder="Data (DD/MM/AAAA)">
+                    <input type="text" id="insOperacao" placeholder="Operação">
+                    <input type="text" id="insCiclo" placeholder="Ciclo">
+                    <input type="text" id="insInicio" placeholder="Hora Início">
+                    <input type="text" id="insFim" placeholder="Hora Fim">
+                    <input type="text" id="insSuplente" placeholder="Suplente">
+                </div>
+                <button class="btn-primary" style="background-color: #222; padding: 6px 15px; font-size: 12px; margin: 0;" onclick="inserirLinhaManual()">Adicionar Linha ao Relatório</button>
+            </div>
+
+            <h3>Relatório Consolidado</h3>
+            <table id="tableRelatorioFolgas">
+                <thead>
+                    <tr><th>Folgante</th><th>Data</th><th>Operação</th><th>Ciclo</th><th>Hora_Início</th><th>Hora_Fim</th><th>Suplente</th></tr>
+                </thead>
+                <tbody><tr><td colspan="7" style="text-align: center; color: #999;">Nenhum processamento executado.</td></tr></tbody>
+            </table>
+        </div>
+
+        <div id="tab-dash" class="tab-content">
+            <h2>4. Dashboard de Operações e Responsáveis</h2>
+            
+            <div class="grid-filters">
+                <div class="filter-group">
+                    <label>Pesquisar por E-mail ou Responsável</label>
+                    <input type="text" id="dashFiltroAnalista" placeholder="Digite para buscar..." oninput="filtrarDash(); guardarFiltrosAtuais();">
+                </div>
+                <div class="filter-group">
+                    <label>Pesquisar por Operação ou Ciclo</label>
+                    <input type="text" id="dashFiltroOperacao" placeholder="Ex: BR_SP_HUB ou C1..." oninput="filtrarDash(); guardarFiltrosAtuais();">
+                </div>
+                <div class="filter-group">
+                    <label>Data do Turno Operacional (DD/MM/AAAA)</label>
+                    <input type="text" id="dashFiltroData" placeholder="Ex: 07/08/2026" oninput="filtrarDash(); guardarFiltrosAtuais();">
+                </div>
+                <div class="filter-group">
+                    <label>Filtrar por Condição</label>
+                    <select id="dashFiltroCondicao" onchange="filtrarDash(); guardarFiltrosAtuais();">
+                        <option value="todos">-- Mostrar Todos --</option>
+                        <option value="titular">👤 Titular</option>
+                        <option value="suplente">🔄 Suplente</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Filtrar por Progresso/Status</label>
+                    <select id="dashFiltroStatus" onchange="filtrarDash(); guardarFiltrosAtuais();">
+                        <option value="todos">-- Mostrar Todos --</option>
+                        <option value="ainiciar">⏳ A iniciar</option>
+                        <option value="emandamento">🏃‍♂️ Em andamento</option>
+                        <option value="finalizada">✅ Finalizada</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn-primary" style="width: 100%; margin-bottom: 25px; padding: 12px; background-color: var(--shopee-orange);" onclick="filtrarDash()">
+                🔍 Atualizar Linha do Tempo e Filtros
+            </button>
+
+            <table id="tableDash">
+                <thead>
+                    <tr>
+                        <th>E-mail do Analista</th>
+                        <th>Operação / Ciclo</th>
+                        <th>Horário da Rota</th>
+                        <th>Responsável Atual</th>
+                        <th>Condição</th>
+                        <th style="width: 25%;">Progresso em Tempo Real</th>
+                    </tr>
+                </thead>
+                <tbody><tr><td colspan="6" style="text-align: center; color: #999;">Carregando dados...</td></tr></tbody>
+            </table>
+        </div>
+
+    </div>
+    <footer>&copy; 2026 SGE 1.0 - Thiago Oliveira Ribeiro</footer>
+</div>
+
+<script>
+    let baseData = [];
+    let folgasArray = [];
+    let relatorioFinal = [];
+    let uniqueAnalysts = new Set();
+    let uniqueHubs = new Set();
+    let levels = { analysts: {}, hubs: {} };
+    let cacheCargaSemanal = {};
+    let historicoHubSuplente = {};
+
+    // Helper para gerar IDs consistentes e seguros no HTML
+    function gerarIdSeguro(str) {
+        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+            return String.fromCharCode('0x' + p1);
+        })).replace(/=/g, '');
+    }
+
+    window.onload = function() { 
+        loadFromStorage();
+        
+        if(localStorage.getItem('sge_activeTab')) {
+            switchTab(localStorage.getItem('sge_activeTab'));
+        }
+        if(localStorage.getItem('sge_filtroAnalista')) document.getElementById('dashFiltroAnalista').value = localStorage.getItem('sge_filtroAnalista');
+        if(localStorage.getItem('sge_filtroOperacao')) document.getElementById('dashFiltroOperacao').value = localStorage.getItem('sge_filtroOperacao');
+        if(localStorage.getItem('sge_filtroStatus')) document.getElementById('dashFiltroStatus').value = localStorage.getItem('sge_filtroStatus');
+        if(localStorage.getItem('sge_filtroCondicao')) document.getElementById('dashFiltroCondicao').value = localStorage.getItem('sge_filtroCondicao');
+        
+        if(!document.getElementById("dashFiltroData").value) {
+            let agora = new Date();
+            if(agora.getHours() < 5) {
+                agora.setDate(agora.getDate() - 1);
+            }
+            document.getElementById("dashFiltroData").value = formatarDataBR(agora);
+        }
+        
+        filtrarDash();
+        setInterval(filtrarDash, 30000);
+    };
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        const content = document.getElementById(tabId);
+        const btn = document.getElementById('btn-' + tabId);
+        
+        if(content) content.classList.add('active');
+        if(btn) btn.classList.add('active');
+        localStorage.setItem('sge_activeTab', tabId);
+    }
+
+    function guardarFiltrosAtuais() {
+        localStorage.setItem('sge_filtroAnalista', document.getElementById('dashFiltroAnalista').value);
+        localStorage.setItem('sge_filtroOperacao', document.getElementById('dashFiltroOperacao').value);
+        localStorage.setItem('sge_filtroData', document.getElementById('dashFiltroData').value);
+        localStorage.setItem('sge_filtroStatus', document.getElementById('dashFiltroStatus').value);
+        localStorage.setItem('sge_filtroCondicao', document.getElementById('dashFiltroCondicao').value);
+    }
+
+    function persistirTextoBase() { localStorage.setItem('sge_rawBaseText', document.getElementById('rawBase').value); }
+    function persistirTextoFolgas() { localStorage.setItem('sge_rawFolgasText', document.getElementById('rawFolgas').value); }
+    function persistirTextoImportado() { localStorage.setItem('sge_rawImportText', document.getElementById('rawRelatorioImportado').value); }
+
+    function parseDataBR(stringData) {
+        if(!stringData) return null;
+        let partes = stringData.trim().split('/');
+        if(partes.length < 3) return null;
+        let [dia, mes, ano] = partes.map(Number);
+        return new Date(ano, mes - 1, dia);
+    }
+
+    function formatarDataBR(dateObj) {
+        let dia = String(dateObj.getDate()).padStart(2, '0');
+        let mes = String(dateObj.getMonth() + 1).padStart(2, '0');
+        let ano = dateObj.getFullYear();
+        return `${dia}/${mes}/${ano}`;
+    }
+
+    function normalizarHora(horaStr) {
+        if(!horaStr) return "00:00";
+        let partes = horaStr.trim().split(':');
+        if(partes.length >= 2) return `${partes[0].padStart(2, '0')}:${partes[1].padStart(2, '0')}`;
+        return horaStr.trim();
+    }
+
+    function obterEmailPorAnalista(termo) {
+        if(!termo) return "";
+        let t = termo.trim().toLowerCase();
+        let achado = baseData.find(b => b.analista && b.analista.toLowerCase() === t || b.email && b.email.toLowerCase() === t || b.email && b.email.includes(t));
+        return achado ? achado.email : t;
+    }
+
+    function saveToStorage() {
+        localStorage.setItem('sge_baseData', JSON.stringify(baseData));
+        localStorage.setItem('sge_relatorioFinal', JSON.stringify(relatorioFinal));
+        localStorage.setItem('sge_levels', JSON.stringify(levels));
+    }
+    
+    function loadFromStorage() {
+        if(localStorage.getItem('sge_baseData')) baseData = JSON.parse(localStorage.getItem('sge_baseData'));
+        if(localStorage.getItem('sge_relatorioFinal')) relatorioFinal = JSON.parse(localStorage.getItem('sge_relatorioFinal'));
+        if(localStorage.getItem('sge_levels')) levels = JSON.parse(localStorage.getItem('sge_levels'));
+        if(localStorage.getItem('sge_rawBaseText')) document.getElementById('rawBase').value = localStorage.getItem('sge_rawBaseText');
+        if(localStorage.getItem('sge_rawFolgasText')) document.getElementById('rawFolgas').value = localStorage.getItem('sge_rawFolgasText');
+        if(localStorage.getItem('sge_rawImportText')) document.getElementById('rawRelatorioImportado').value = localStorage.getItem('sge_rawImportText');
+        
+        baseData.forEach(item => {
+            uniqueAnalysts.add(item.analista);
+            uniqueHubs.add(`${item.hubSort} - ${item.janela}`);
+        });
+    }
+    
+    function clearStorage() { localStorage.clear(); location.reload(); }
+    
+    function renderRelatorioTable(dados) {
+        let tbody = document.getElementById("tableRelatorioFolgas").querySelector("tbody");
+        if(!dados || dados.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #999;">Nenhum processamento executado.</td></tr>`;
+            return;
+        }
+        let html = "";
+        dados.forEach(r => {
+            html += `<tr><td>${r.folgante}</td><td>${r.data}</td><td>${r.operacao}</td><td>${r.ciclo}</td><td>${r.inicioRt}</td><td>${r.fimRt}</td><td>${r.suplente}</td></tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function calcularProgressoRota(inicioRt, fimRt, dataFiltroStr) {
+        let agora = new Date();
+        let [iniH, iniM] = inicioRt.split(':').map(Number);
+        let [fimH, fimM] = fimRt.split(':').map(Number);
+
+        let dataBaseRef = parseDataBR(dataFiltroStr);
+        let dataInicio = new Date(dataBaseRef.getFullYear(), dataBaseRef.getMonth(), dataBaseRef.getDate(), iniH, iniM, 0);
+        let dataFim = new Date(dataBaseRef.getFullYear(), dataBaseRef.getMonth(), dataBaseRef.getDate(), fimH, fimM, 0);
+
+        if (iniH >= 0 && iniH <= 5) {
+            dataInicio.setDate(dataInicio.getDate() + 1);
+        }
+        if (dataFim <= dataInicio) {
+            dataFim.setDate(dataFim.getDate() + 1);
+        }
+
+        if (agora < dataInicio) {
+            return { porcentagem: 0, status: 'ainiciar', txt: 'A iniciar' };
+        } else if (agora >= dataInicio && agora <= dataFim) {
+            let total = dataFim - dataInicio;
+            let passado = agora - dataInicio;
+            let pct = Math.floor((passado / total) * 100);
+            return { porcentagem: pct, status: 'emandamento', txt: `${pct}% Executado` };
+        } else {
+            return { porcentagem: 100, status: 'finalizada', txt: 'Finalizada' };
+        }
+    }
+
+    function processarBase() {
+        const text = document.getElementById('rawBase').value.trim();
+        const feedback = document.getElementById('baseFeedback');
+        if(!text) return alert("Por favor, cole os dados da base mestre.");
+        
+        feedback.style.color = "orange";
+        feedback.innerText = "Mapeando e assegurando persistência...";
+
+        setTimeout(() => {
+            try {
+                executarMapeamentoBase(text);
+                persistirTextoBase();
+                feedback.style.color = "green";
+                feedback.innerText = `Sucesso total! ${baseData.length} linhas de operação carregadas e salvas.`;
+                renderNiveis(); 
+                saveToStorage(); 
+                filtrarDash();
+            } catch(err) {
+                feedback.style.color = "red";
+                feedback.innerText = "Erro ao processar dados: " + err.message;
+            }
+        }, 50);
+    }
+
+    // CORRIGIDO: Modificado de 'ejecutarMapeamentoBase' para 'executarMapeamentoBase' com "x"
+    function executarMapeamentoBase(text) {
+        baseData = []; uniqueAnalysts.clear(); uniqueHubs.clear();
+        const lines = text.split('\n');
+        
+        for(let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            if(!line) continue;
+            if(i === 0 && (line.toLowerCase().includes("analista") || line.toLowerCase().includes("email") || line.toLowerCase().includes("exp"))) continue;
+
+            const cols = line.split('\t');
+            
+            if(cols.length >= 4) { 
+                const item = {
+                    inicioExp: cols[0] ? cols[0].trim() : "00:00", 
+                    fimExp: cols[1] ? cols[1].trim() : "00:00", 
+                    email: cols[2] ? cols[2].trim().toLowerCase() : "",
+                    analista: cols[3] ? cols[3].trim() : "", 
+                    hubSort: cols[4] ? cols[4].trim() : "N/A", 
+                    hubName: cols[5] ? cols[5].trim() : "",
+                    janela: cols[6] ? cols[6].trim() : "N/A", 
+                    inicioRt: cols[7] ? cols[7].trim() : "00:00", 
+                    fimRt: cols[8] ? cols[8].trim() : "00:00",
+                    dataInicioVigencia: cols[9] ? cols[9].trim() : "", 
+                    dataFimVigencia: cols[10] ? cols[10].trim() : ""
+                };
+                
+                if(item.email && item.analista) {
+                    baseData.push(item);
+                    uniqueAnalysts.add(item.analista);
+                    uniqueHubs.add(`${item.hubSort} - ${item.janela}`);
+                }
+            }
+        }
+        
+        if(baseData.length === 0) {
+            throw new Error("Nenhuma linha válida estruturada com Email e Analista foi identificada.");
+        }
+    }
+
+    function renderNiveis() {
+        let aHtml = '<table><tr><th>Analista</th><th>Nível</th></tr>';
+        uniqueAnalysts.forEach(a => {
+            let current = levels.analysts[a] || 1;
+            let idSeguro = gerarIdSeguro(a);
+            aHtml += `<tr><td>${a}</td><td><select id="lvl_a_${idSeguro}"><option value="1" ${current==1?'selected':''}>Nível 1</option><option value="2" ${current==2?'selected':''}>Nível 2</option><option value="3" ${current==3?'selected':''}>Nível 3</option></select></td></tr>`;
+        });
+        document.getElementById('listaAnalistasNiveis').innerHTML = aHtml + '</table>';
+
+        let hHtml = '<table><tr><th>Operação</th><th>Complexidade Exigida</th></tr>';
+        uniqueHubs.forEach(h => {
+            let current = levels.hubs[h] || 1;
+            let idSeguro = gerarIdSeguro(h);
+            hHtml += `<tr><td>${h}</td><td><select id="lvl_h_${idSeguro}"><option value="1" ${current==1?'selected':''}>Nível 1</option><option value="2" ${current==2?'selected':''}>Nível 2</option><option value="3" ${current==3?'selected':''}>Nível 3</option></select></td></tr>`;
+        });
+        document.getElementById('listaHubsNiveis').innerHTML = hHtml + '</table>';
+    }
+
+    function salvarNiveis() {
+        uniqueAnalysts.forEach(a => { 
+            let idSeguro = gerarIdSeguro(a);
+            levels.analysts[a] = parseInt(document.getElementById(`lvl_a_${idSeguro}`).value); 
+        });
+        uniqueHubs.forEach(h => { 
+            let idSeguro = gerarIdSeguro(h);
+            levels.hubs[h] = parseInt(document.getElementById(`lvl_h_${idSeguro}`).value); 
+        });
+        saveToStorage(); 
+        alert("Níveis salvos!");
+    }
+
+    function horaEstaNaJornada(horaRt, entrada, saida) {
+        let [rtH, rtM] = normalizarHora(horaRt).split(':').map(Number);
+        let [entH, entM] = normalizarHora(entrada).split(':').map(Number);
+        let [saiH, saiM] = normalizarHora(saida).split(':').map(Number);
+        let minRt = rtH * 60 + rtM; let minEnt = entH * 60 + entM; let minSai = saiH * 60 + saiM;
+        if (minEnt <= minSai) return minRt >= minEnt && minRt <= minSai;
+        return minRt >= minEnt || minRt <= minSai;
+    }
+
+    function calcularSuplenciaLote() {
+        let text = document.getElementById('rawFolgas').value.trim();
+        if(!text) return alert("Insira as folgas.");
+        persistirTextoFolgas();
+        folgasArray = []; relatorioFinal = [];
+
+        const lines = text.split('\n');
+        lines.forEach(line => {
+            if(!line.trim()) return;
+            const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i;
+            const dataRegex = /\d{2}\/\d{2}\/\d{4}/;
+            let matchEmail = line.match(emailRegex); let matchData = line.match(dataRegex);
+            
+            let emailFolgante = matchEmail ? matchEmail[0].trim().toLowerCase() : "";
+            let dataFolgante = matchData ? matchData[0].trim() : "";
+            
+            if(!emailFolgante) {
+                let partes = line.split('\t');
+                if(partes[0]) emailFolgante = obterEmailPorAnalista(partes[0]);
+                if(partes[1] && partes[1].match(dataRegex)) dataFolgante = partes[1].trim();
+            }
+
+            if(emailFolgante && dataFolgante) { folgasArray.push({ emailFolgante: emailFolgante, data: dataFolgante }); }
+        });
+
+        folgasArray.forEach(folga => {
+            let rotasDoFolgante = baseData.filter(b => b.email === folga.emailFolgante);
+            rotasDoFolgante.forEach(rota => {
+                let opChave = `${rota.hubSort} - ${rota.janela}`;
+                let complexidadeExigida = levels.hubs[opChave] || 1;
+                let candidates = [];
+
+                uniqueAnalysts.forEach(a => {
+                    let dadosCandidato = baseData.find(b => b.analista === a);
+                    if(!dadosCandidato || dadosCandidato.email === folga.emailFolgante) return;
+                    if(folgasArray.some(f => f.emailFolgante === dadosCandidato.email && f.data === folga.data)) return;
+                    if (!horaEstaNaJornada(rota.inicioRt, dadosCandidato.inicioExp, dadosCandidato.fimExp)) return;
+                    if(relatorioFinal.some(r => r.suplente === a && r.data === folga.data && normalizarHora(r.inicioRt) === normalizarHora(rota.inicioRt))) return;
+
+                    let coberturasNaMesmaData = relatorioFinal.filter(r => r.suplente === a && r.data === folga.data).length;
+                    let vezesQueFezEsseHub = historicoHubSuplente[`${a}_${rota.hubSort}`] || 0;
+                    let ocupadoMestre = baseData.some(b => b.analista === a && normalizarHora(b.inicioRt) === normalizarHora(rota.inicioRt));
+
+                    if(!ocupadoMestre && (levels.analysts[a] || 1) >= complexidadeExigida) {
+                        candidates.push({ nome: a, email: dadosCandidato.email, cargaGeral: cacheCargaSemanal[a] || 0, cargaDiaria: coberturasNaMesmaData, repeticaoHub: vezesQueFezEsseHub });
+                    }
+                });
+
+                candidates.sort((a, b) => a.cargaDiaria - b.cargaDiaria || a.repeticaoHub - b.repeticaoHub || a.cargaGeral - b.cargaGeral);
+                let suplenteDefinido = candidates.length > 0 ? candidates[0].nome : "Ajuste Manual";
+                let emailSuplenteDefinido = candidates.length > 0 ? candidates[0].email : "pendente@shopee.com";
+
+                if(candidates.length > 0) {
+                    cacheCargaSemanal[suplenteDefinido] = (cacheCargaSemanal[suplenteDefinido] || 0) + 1;
+                    historicoHubSuplente[`${suplenteDefinido}_${rota.hubSort}`] = (historicoHubSuplente[`${suplenteDefinido}_${rota.hubSort}`] || 0) + 1;
+                }
+
+                relatorioFinal.push({ folgante: rota.analista, emailFolgante: rota.email, data: folga.data, operacao: rota.hubSort, ciclo: rota.janela, inicioRt: normalizarHora(rota.inicioRt), fimRt: normalizarHora(rota.fimRt), suplente: suplenteDefinido, emailSuplente: emailSuplenteDefinido });
+            });
+        });
+
+        renderRelatorioTable(relatorioFinal); saveToStorage(); filtrarDash(); alert("Escala calculada com sucesso!");
+    }
+
+    function filtrarDash() {
+        const fAnalista = document.getElementById("dashFiltroAnalista").value.trim().toLowerCase();
+        const fOperacao = document.getElementById("dashFiltroOperacao").value.trim().toLowerCase();
+        const fDataStr = document.getElementById("dashFiltroData").value.trim();
+        const fStatus = document.getElementById("dashFiltroStatus").value;
+        const fCondicao = document.getElementById("dashFiltroCondicao").value;
+        const tbody = document.getElementById("tableDash").querySelector("tbody");
+
+        if(baseData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #999;">Importe a base mestre operacional na Aba 1.</td></tr>`;
+            return;
+        }
+        if(!fDataStr) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #999;">Defina uma data válida para análise.</td></tr>`;
+            return;
+        }
+
+        let dataAlvoOriginal = parseDataBR(fDataStr);
+        if(!dataAlvoOriginal) return;
+
+        let dadosPorVigencia = baseData.filter(linha => {
+            let vigenciaInicio = parseDataBR(linha.dataInicioVigencia);
+            let vigenciaFim = parseDataBR(linha.dataFimVigencia);
+            if(vigenciaInicio && dataAlvoOriginal < vigenciaInicio) return false;
+            if(vigenciaFim && dataAlvoOriginal > vigenciaFim) return false;
+            return true;
+        });
+
+        let dadosFiltradosJanela = dadosPorVigencia.filter(linha => {
+            if(!linha.inicioRt) return false;
+            let [h, m] = normalizarHora(linha.inicioRt).split(':').map(Number);
+            if (h >= 19 && h <= 23) return true;
+            if (h >= 0 && h <= 5) return true;
+            return false;
+        });
+
+        dadosFiltradosJanela.sort((a, b) => {
+            let [hA, mA] = normalizarHora(a.inicioRt).split(':').map(Number); 
+            let [hB, mB] = normalizarHora(b.inicioRt).split(':').map(Number);
+            let pesoA = (hA >= 19) ? hA : hA + 24;
+            let pesoB = (hB >= 19) ? hB : hB + 24;
+            return (pesoA * 60 + mA) - (pesoB * 60 + mB);
+        });
+
+        let html = "";
+        dadosFiltradosJanela.forEach(linha => {
+            let hNorm = normalizarHora(linha.inicioRt);
+            let hFimNorm = normalizarHora(linha.fimRt);
+            
+            let dataBuscaEscalaStr = fDataStr;
+            let analistaDeFolga = false;
+            let suplenteDefinido = "";
+
+            let registroEscala = relatorioFinal.find(r => {
+                if(r.data.trim() !== dataBuscaEscalaStr) return false;
+                if(normalizarHora(r.inicioRt) !== hNorm) return false;
+                
+                let emailRelatorio = r.emailFolgante ? r.emailFolgante.trim().toLowerCase() : obterEmailPorAnalista(r.folgante);
+                if(emailRelatorio !== linha.email.trim().toLowerCase()) return false;
+
+                return linha.hubSort.toLowerCase().trim() === r.operacao.toLowerCase().trim();
+            });
+
+            if(registroEscala) { 
+                analistaDeFolga = true; 
+                suplenteDefinido = registroEscala.suplente; 
+            }
+            
+            let responsavelFinal = analistaDeFolga ? suplenteDefinido : linha.analista;
+            let emailResponsavelFinal = analistaDeFolga ? (obterEmailPorAnalista(suplenteDefinido) || "suplente@shopee.com") : linha.email;
+            let badgeCondicao = analistaDeFolga ? `<span class="badge badge-suplente">Suplente</span>` : `<span class="badge badge-original">Titular</span>`;
+
+            let condicaoRow = analistaDeFolga ? "suplente" : "titular";
+            if(fCondicao !== "todos" && condicaoRow !== fCondicao) return;
+
+            if(fAnalista && !linha.email.includes(fAnalista) && !responsavelFinal.toLowerCase().includes(fAnalista) && !emailResponsavelFinal.includes(fAnalista)) return;
+            if(fOperacao && !linha.hubSort.toLowerCase().includes(fOperacao) && !linha.janela.toLowerCase().includes(fOperacao)) return;
+
+            let progresso = calcularProgressoRota(hNorm, hFimNorm, fDataStr);
+            if(fStatus !== "todos" && progresso.status !== fStatus) return;
+
+            let labelStatusHtml = "";
+            if(progresso.status === "ainiciar") labelStatusHtml = `<span class="status-tag status-ainiciar">⏳ A iniciar</span>`;
+            if(progresso.status === "emandamento") labelStatusHtml = `<span class="status-tag status-emandamento">🏃‍♂️ Em andamento</span>`;
+            if(progresso.status === "finalizada") labelStatusHtml = `<span class="status-tag status-finalizada">✅ Finalizada</span>`;
+
+            html += `<tr>
+                <td>${linha.email}</td>
+                <td><strong>${linha.hubSort}</strong><br><span style="color:#777; font-size:11px;">Ciclo: ${linha.janela}</span></td>
+                <td><strong>${hNorm} às ${hFimNorm}</strong></td>
+                <td><strong style="color: ${analistaDeFolga ? '#e65100' : 'var(--shopee-dark)'}">${responsavelFinal}</strong></td>
+                <td>${badgeCondicao}</td>
+                <td>
+                    ${labelStatusHtml}
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: ${progresso.porcentagem}%; background-color: ${progresso.status === 'finalizada' ? '#4CAF50' : '#FF9800'}"></div>
+                    </div>
+                    <span class="progress-text">${progresso.txt}</span>
+                </td>
+            </tr>`;
+        });
+
+        tbody.innerHTML = html || `<tr><td colspan="6" style="text-align: center; color: #999;">Nenhuma operação correspondente encontrada nos filtros aplicados.</td></tr>`;
+    }
+
+    function importarRelatorioPronto() {
+        const text = document.getElementById("rawRelatorioImportado").value.trim();
+        if(!text) return alert("Insira os dados.");
+        persistirTextoImportado();
+        
+        const lines = text.split('\n');
+        relatorioFinal = [];
+        for(let i=0; i<lines.length; i++){
+            let line = lines[i].trim();
+            if(!line) continue;
+            if(i === 0 && line.toLowerCase().includes("folgante")) continue;
+            let cols = line.split('\t');
+            if(cols.length >= 7){
+                relatorioFinal.push({
+                    folgante: cols[0].trim(),
+                    emailFolgante: obterEmailPorAnalista(cols[0]),
+                    data: cols[1].trim(),
+                    operacao: cols[2].trim(),
+                    ciclo: cols[3].trim(),
+                    inicioRt: normalizarHora(cols[4]),
+                    fimRt: normalizarHora(cols[5]),
+                    suplente: cols[6].trim(),
+                    emailSuplente: obterEmailPorAnalista(cols[6])
+                });
+            }
+        }
+        renderRelatorioTable(relatorioFinal);
+        saveToStorage();
+        filtrarDash();
+        alert("Relatório importado com sucesso!");
+    }
+
+    function inserirLinhaManual() {
+        let f = document.getElementById("insFolgante").value.trim();
+        let d = document.getElementById("insData").value.trim();
+        let o = document.getElementById("insOperacao").value.trim();
+        let c = document.getElementById("insCiclo").value.trim();
+        let i = document.getElementById("insInicio").value.trim();
+        let fim = document.getElementById("insFim").value.trim();
+        let s = document.getElementById("insSuplente").value.trim();
+
+        if(!f || !d || !o || !i || !fim || !s) return alert("Preencha os campos obrigatórios para inserção.");
+
+        relatorioFinal.push({
+            folgante: f, emailFolgante: obterEmailPorAnalista(f),
+            data: d, operation: o, ciclo: c || "N/A",
+            inicioRt: normalizarHora(i), fimRt: normalizarHora(fim),
+            suplente: s, emailSuplente: obterEmailPorAnalista(s)
+        });
+
+        renderRelatorioTable(relatorioFinal);
+        saveToStorage();
+        filtrarDash();
+        
+        document.getElementById("insFolgante").value = "";
+        document.getElementById("insOperacao").value = "";
+        document.getElementById("insSuplente").value = "";
+    }
+
+    function limparHistoricoFolgas() {
+        if(confirm("Deseja limpar todo o relatório consolidado atual?")) {
+            relatorioFinal = [];
+            renderRelatorioTable(relatorioFinal);
+            saveToStorage();
+            filtrarDash();
+        }
+    }
+
+    function exportarRelatorioCSV() {
+        if(relatorioFinal.length === 0) return alert("Não há dados para exportar.");
+        let csv = "Folgante\tData\tOperacao\tCiclo\tHora_Inicio\tHora_Fim\tSuplente\n";
+        relatorioFinal.forEach(r => {
+            csv += `${r.folgante}\t${r.data}\t${r.operacao}\t${r.ciclo}\t${r.inicioRt}\t${r.fimRt}\t${r.suplente}\n`;
+        });
+        let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        let link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", `Relatorio_Cobertura_SGE_${document.getElementById("dashFiltroData").value.replace(/\//g,'-')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+</body>
+</html>
